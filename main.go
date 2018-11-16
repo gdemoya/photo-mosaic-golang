@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"log"
 	"image/png"
+	"log"
+	"os"
 
-	"golang-challenge.org/challenge3/mosaic"
 	"github.com/urfave/cli"
+	"golang-challenge.org/challenge3/mosaic"
 )
 
 func main() {
@@ -54,11 +54,11 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		if c.GlobalString("main")=="" || c.GlobalString("tiles")=="" || c.GlobalString("output")=="" {
+		if c.GlobalString("main") == "" || c.GlobalString("tiles") == "" || c.GlobalString("output") == "" {
 			log.Fatal("main & tiles & output paths are mandatory")
 		}
 
-		if c.Int("mask")<0 || c.Int("mask")>255 {
+		if c.Int("mask") < 0 || c.Int("mask") > 255 {
 			log.Fatal("mask should be between 0 and 255")
 		}
 
@@ -66,9 +66,9 @@ func main() {
 
 		fmt.Printf("Starting...\n")
 		mosaic, err := mosaic.NewMosaic(
-			c.String("main"), 
-			c.String("tiles"), 
-			c.Int("ch"), 
+			c.String("main"),
+			c.String("tiles"),
+			c.Int("ch"),
 			c.Int("cv"),
 			c.Int("threads"),
 			uint8(c.Int("mask")),
@@ -79,7 +79,7 @@ func main() {
 
 		mosaic.Generate()
 		mosaicpng, _ := os.Create(c.String("output"))
-    	png.Encode(mosaicpng, mosaic.Get())
+		png.Encode(mosaicpng, mosaic.Get())
 
 		return nil
 	}
