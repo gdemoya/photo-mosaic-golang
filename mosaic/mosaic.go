@@ -28,9 +28,10 @@ type Mosaic struct {
 	tilerCollection TilerCollection
 	cv,ch	int
 	tiler_h_pixels, tiler_v_pixels int
+	mask image.Image
 }
 
-func NewMosaic(masterPath, tilerPath string, ch, cv int) (Mosaic, error){
+func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, error){
 	log.Printf("Creating new Mosaic...")
 
 	m, err := NewMasterImage(masterPath, ch, cv)
@@ -55,6 +56,7 @@ func NewMosaic(masterPath, tilerPath string, ch, cv int) (Mosaic, error){
 		ch: ch,
 		tiler_h_pixels: tiler_h_pixels,
 		tiler_v_pixels: tiler_v_pixels,
+		mask: &image.Uniform{color.RGBA{mask,mask,mask,mask}},
 	}, nil
 }
 
@@ -73,7 +75,7 @@ func (img Mosaic) Generate(){
 
 			tiler := img.tilerCollection.SearchClosestColorTiler(a_color)
 
-			draw.DrawMask(img.master, tmp_rect, tiler, image.ZP, &image.Uniform{color.RGBA{180,180,180,180}}, image.ZP, draw.Over)
+			draw.DrawMask(img.master, tmp_rect, tiler, image.ZP, img.mask, image.ZP, draw.Over)
 		}
 	}
 }

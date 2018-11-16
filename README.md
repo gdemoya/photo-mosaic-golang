@@ -2,6 +2,8 @@
 
 ## Usage
 
+eg. `go run main.go -m img/cage.jpg -t img/tiles/ -o img/output.png --mask 0`
+
 ```
 NAME:
    challenge3 - Get Mosaic from Image and Tiles

@@ -37,6 +37,11 @@ func main() {
 			Usage: "number of vertical splits",
 			Value: 50,
 		},
+		cli.IntFlag{
+			Name:  "mask",
+			Usage: "transparency of the tilers (Max: 255 | Min: 0)",
+			Value: 180,
+		},
 		cli.StringFlag{
 			Name:  "output, o",
 			Value: "",
@@ -48,12 +53,17 @@ func main() {
 			log.Fatal("main & tiles & output paths are mandatory")
 		}
 
+		if c.Int("mask")<0 || c.Int("mask")>255 {
+			log.Fatal("mask should be between 0 and 255")
+		}
+
 		fmt.Printf("Starting...\n")
 		mosaic, err := challenge3.NewMosaic(
 			c.String("main"), 
 			c.String("tiles"), 
 			c.Int("ch"), 
 			c.Int("cv"),
+			uint8(c.Int("mask")),
 		)
 		if err != nil {
 			log.Fatal(err)
@@ -62,7 +72,6 @@ func main() {
 		mosaic.Generate()
 		mosaicpng, _ := os.Create(c.String("output"))
     	png.Encode(mosaicpng, mosaic.Get())
-
 
 		return nil
 	}
