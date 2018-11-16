@@ -57,8 +57,10 @@ func main() {
 			log.Fatal("mask should be between 0 and 255")
 		}
 
+		// TODO: make standard path format. end with /?
+
 		fmt.Printf("Starting...\n")
-		mosaic, err := challenge3.NewMosaic(
+		mosaic, err := mosaic.NewMosaic(
 			c.String("main"), 
 			c.String("tiles"), 
 			c.Int("ch"), 

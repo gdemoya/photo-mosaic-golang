@@ -1,4 +1,4 @@
-package challenge3
+package mosaic
 
 import (
 	"os"
@@ -60,6 +60,8 @@ func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, er
 	}, nil
 }
 
+
+// TODO: go routines per quadrant
 func (img Mosaic) Generate(){
 
 	for y := 0; y < img.cv; y++ {
@@ -101,7 +103,7 @@ func NewMasterImage(masterPath string, ch, cv int)(MasterImage, error){
 
 	img, _, err := image.Decode(reader)
 	if err != nil {
-		log.Fatal("Error with file %s" , masterPath, err)
+		log.Fatalf("Error with file %s: %v" , masterPath, err)
 	}
 
 	bounds := img.Bounds()
@@ -123,6 +125,7 @@ type TilerCollection struct {
 	tilerImages [] TilerImage
 }
 
+// TODO: separate in go routines
 func NewTilerCollection(tilerPath string, tiler_h_pixels, tiler_v_pixels int) (TilerCollection, error){
 	// log.Printf("Creating new TilerCollection...")
 
@@ -179,7 +182,7 @@ func NewTilerImage(tilerPath string, tiler_h_pixels, tiler_v_pixels int)(TilerIm
 
 	m, _, err := image.Decode(reader)
 	if err != nil {
-		log.Fatal("Error with file %s" , tilerPath, err)
+		log.Fatalf("Error with file %s: %v" , tilerPath, err)
 	}
 
 	dst := image.NewRGBA(image.Rect(0, 0, tiler_h_pixels, tiler_v_pixels))
