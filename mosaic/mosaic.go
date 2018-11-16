@@ -4,6 +4,7 @@ import (
 	"os"
 	"log"
 	"math"
+	"sync"
 
 	"golang-challenge.org/challenge3/util"
 
@@ -32,7 +33,7 @@ type Mosaic struct {
 	Threads int
 }
 
-func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, error){
+func NewMosaic(masterPath, tilerPath string, ch, cv, threads int, mask uint8) (Mosaic, error){
 	log.Printf("Creating new Mosaic...")
 
 	m, err := NewMasterImage(masterPath, ch, cv)
@@ -45,7 +46,7 @@ func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, er
 	tiler_h_pixels := (bounds.Max.X -  bounds.Min.X) / ch
 	tiler_v_pixels := (bounds.Max.Y -  bounds.Min.Y) / cv
 
-	t, err := NewTilerCollection(tilerPath, tiler_h_pixels, tiler_v_pixels)
+	t, err := NewTilerCollection(tilerPath, tiler_h_pixels, tiler_v_pixels , threads)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,12 +59,10 @@ func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, er
 		tiler_h_pixels: tiler_h_pixels,
 		tiler_v_pixels: tiler_v_pixels,
 		mask: &image.Uniform{color.RGBA{mask,mask,mask,mask}},
-		Threads: 4,
+		Threads: threads,
 	}, nil
 }
 
-
-// TODO: go routines
 func (img Mosaic) Generate(){
 	cv := img.cv/img.Threads
 	for i:=0 ; i<img.Threads ; i++ {
@@ -73,7 +72,7 @@ func (img Mosaic) Generate(){
 			if i==(img.Threads-1){
 				cv_final += (img.cv % img.Threads)
 			}
-			log.Printf("%i hasta %i",cv_init,cv_final)
+			log.Printf("%v hasta %v", cv_init, cv_final)
 			for y := cv_init; y < cv_final; y++ {
 				for x := 0; x < img.ch; x++ {
 					x0_tmp := x    *img.tiler_h_pixels
@@ -97,10 +96,6 @@ func (img Mosaic) Generate(){
 
 func (img Mosaic) Get() (image.Image){
 	return &img.master
-}
-
-func (m Mosaic) String() (string){
-	return "mosaic"
 }
 
 type MasterImage struct {
@@ -138,10 +133,7 @@ type TilerCollection struct {
 	tilerImages [] TilerImage
 }
 
-// TODO: separate in go routines
-func NewTilerCollection(tilerPath string, tiler_h_pixels, tiler_v_pixels int) (TilerCollection, error){
-	// log.Printf("Creating new TilerCollection...")
-
+func NewTilerCollection(tilerPath string, tiler_h_pixels, tiler_v_pixels, threads int) (TilerCollection, error){
 	var tilerCollection []TilerImage
 
     f, err := os.Open(tilerPath)
@@ -154,13 +146,33 @@ func NewTilerCollection(tilerPath string, tiler_h_pixels, tiler_v_pixels int) (T
         return TilerCollection{nil}, err
     }
 
-    for _, file := range fileInfo {
-		t, err := NewTilerImage(tilerPath+file.Name(), tiler_h_pixels, tiler_v_pixels)
-		if err != nil {
-        	return TilerCollection{nil}, err
-    	}
-        tilerCollection = append(tilerCollection, t)
-    }
+	var wg sync.WaitGroup
+	wg.Add(threads)
+	nfiles := len(fileInfo)/threads
+	for i:=0 ; i<threads ; i++ {
+		go func (i int) {
+			defer wg.Done()
+			nfile_init := i*nfiles
+			nfile_final := nfile_init+nfiles
+			if i==(threads-1){
+				nfile_final += (nfiles % threads)
+			}
+			log.Printf("%v hasta %v", nfile_init, nfile_final)
+			
+			for y := nfile_init; y < nfile_final; y++ {
+				file := fileInfo[y]
+				t, err := NewTilerImage(tilerPath+file.Name(), tiler_h_pixels, tiler_v_pixels)
+				if err != nil {
+					log.Fatal(err)
+				}
+				tilerCollection = append(tilerCollection, t)
+			}
+		}(i)
+	}
+
+	log.Printf("Waiting...")
+	wg.Wait()
+	log.Printf("Finished")
     return TilerCollection{tilerCollection}, nil
 }
 

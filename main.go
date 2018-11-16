@@ -42,6 +42,11 @@ func main() {
 			Usage: "transparency of the tilers (Max: 255 | Min: 0)",
 			Value: 180,
 		},
+		cli.IntFlag{
+			Name:  "threads",
+			Usage: "number of threads. Set parallelism",
+			Value: 4,
+		},
 		cli.StringFlag{
 			Name:  "output, o",
 			Value: "",
@@ -65,6 +70,7 @@ func main() {
 			c.String("tiles"), 
 			c.Int("ch"), 
 			c.Int("cv"),
+			c.Int("threads"),
 			uint8(c.Int("mask")),
 		)
 		if err != nil {
