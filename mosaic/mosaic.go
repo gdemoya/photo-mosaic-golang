@@ -29,6 +29,7 @@ type Mosaic struct {
 	cv,ch	int
 	tiler_h_pixels, tiler_v_pixels int
 	mask image.Image
+	Threads int
 }
 
 func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, error){
@@ -57,28 +58,40 @@ func NewMosaic(masterPath, tilerPath string, ch, cv int, mask uint8) (Mosaic, er
 		tiler_h_pixels: tiler_h_pixels,
 		tiler_v_pixels: tiler_v_pixels,
 		mask: &image.Uniform{color.RGBA{mask,mask,mask,mask}},
+		Threads: 4,
 	}, nil
 }
 
 
-// TODO: go routines per quadrant
+// TODO: go routines
 func (img Mosaic) Generate(){
+	cv := img.cv/img.Threads
+	for i:=0 ; i<img.Threads ; i++ {
+		go func (i int) {
+			cv_init := i*cv
+			cv_final := cv_init+cv
+			if i==(img.Threads-1){
+				cv_final += (img.cv % img.Threads)
+			}
+			log.Printf("%i hasta %i",cv_init,cv_final)
+			for y := cv_init; y < cv_final; y++ {
+				for x := 0; x < img.ch; x++ {
+					x0_tmp := x    *img.tiler_h_pixels
+					x1_tmp := (x+1)*img.tiler_h_pixels
+					y0_tmp := y    *img.tiler_v_pixels
+					y1_tmp := (y+1)*img.tiler_v_pixels
 
-	for y := 0; y < img.cv; y++ {
-		for x := 0; x < img.ch; x++ {
-			x0_tmp := x    *img.tiler_h_pixels
-			x1_tmp := (x+1)*img.tiler_h_pixels
-			y0_tmp := y    *img.tiler_v_pixels
-			y1_tmp := (y+1)*img.tiler_v_pixels
+					tmp_rect := image.Rect(x0_tmp, y0_tmp, x1_tmp, y1_tmp)
+					slice := img.master.SubImage(tmp_rect)
+					a_color := util.AverageColor(slice)
 
-			tmp_rect := image.Rect(x0_tmp, y0_tmp, x1_tmp, y1_tmp)
-			slice := img.master.SubImage(tmp_rect)
-			a_color := util.AverageColor(slice)
+					tiler := img.tilerCollection.SearchClosestColorTiler(a_color)
 
-			tiler := img.tilerCollection.SearchClosestColorTiler(a_color)
+					draw.DrawMask(img.master, tmp_rect, tiler, image.ZP, img.mask, image.ZP, draw.Over)
+				}
+			}
+		}(i)
 
-			draw.DrawMask(img.master, tmp_rect, tiler, image.ZP, img.mask, image.ZP, draw.Over)
-		}
 	}
 }
 

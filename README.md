@@ -2,7 +2,7 @@
 
 ## Usage
 
-eg. `go run main.go -m img/cage.jpg -t img/tiles/ -o img/output.png --mask 0`
+eg. `go run main.go -m img/cage.jpg -t img/tiles/ -o img/output.png --mask 180`
 
 ```
 NAME:
